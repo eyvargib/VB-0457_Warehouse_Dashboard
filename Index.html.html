@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://portal.e-yantra.org/img/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://portal.e-yantra.org/img/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://portal.e-yantra.org/img/favicon_io/favicon-16x16.png">
+    <title>VB#0457 -- Dashboard</title>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""></script>
+
+</head>
+<header>
+  <center>
+    <div id="eyantraLogo">
+      <!-- eyantra logo -->
+      <img src="https://eyic.e-yantra.org/img/eYantra_logo_whitetext.png" alt="e_yantra_logo" width="290"
+        height="60"><br>
+    </div>
+  </center>
+</header>
+
+<body style="background-color:#111d5e;">
+  <center>
+    <h2 style="color:#e7e7de ;">VB#0457 Dashboard</h2>
+  </center>
+</body>
+
+<body>
+  <center>
+  <table border=10 bordercolor = #f7f6e7 style="width: 1780px; height: 400px;">
+    <tr>
+      <td >
+        <table cellspacing="1">
+          <tr><td style="width: 1400px; height: 400px; color: rgb(255, 255, 255); font-size: 25px; font-weight: bolder; font-family: Lucida Grande; text-align: center;">
+            ORDER LOCATION
+            <div id="map" style="width: 100%;  height: 400px"></div>
+          </td></tr>
+        </table>
+      </td>
+      <td >
+      <table >
+        <tr><td style="width: 600px; height: 400px; color: rgb(255, 255, 255); font-size: 25px; font-weight: bolder; font-family: Lucida Grande;">
+          TIME TAKEN FOR ITEMS TO BE SHIPPED
+          <div id="column_chart" style="width: 100%; height: 400px;"></div>
+        </td></tr>
+      </table>
+      </td>
+      </tr>
+  </table>    
+</center>
+
+  
+</body>
+
+<body>
+  <!-- <div class="row"> -->
+    <!-- <center><h2>VB#0000 Dashboard Module 2</h2></center> -->
+    <hr style="height:10px;border-width:0;background-color:rgb(255, 255, 255);">
+
+    <center>
+      <table id="table1" border='4' style="width:1780px; height: 450px;border-color: #ffffff;">
+        <tr style="background-color:#f8efd4 ;color:#132743 ; font-weight:bold; font-family:courier; font-size:120%">
+          <th>Order ID</th>
+          <th>Item</th>
+          <th>Priority</th>
+          <th>City</th>
+          <th>Dispatched</th>
+          <th>Shipped</th>
+          <th>Order Date and Time</th>
+          <th>Dispatch Date and Time</th>
+          <th>Shipping Date and Time</th>
+          <th>Time Taken</th>
+        </tr>
+        <tbody id="tableContent">
+        </tbody>
+      </table>
+    </center>
+
+    <hr style="height:10px;border-width:0;background-color:rgb(255, 255, 255)">
+  <!-- </div> -->
+</body>
+
+<script>
+  /////////////Ajax Requests////////////
+  $(document).ready(function () {
+    // Fetch the initial Map
+    refreshMap();
+
+    // Fetch every 5 second
+    setInterval(refreshMap, 5000);
+  });
+
+  function refreshMap() {
+    var container = L.DomUtil.get('map');
+
+
+    if (container != null) {
+      container._leaflet_id = null;
+    }
+
+    var map = L.map('map').setView([22.5937, 78.9629], 4);
+    var jsonDataObject = [];
+
+    $.getJSON('https://spreadsheets.google.com/feeds/list/1Bpk3VPFkcsG2NdKZkl--HhLIVoAIlKKmlceuJiEqRGY/5/public/full?alt=json', function (data) {
+
+      for (var i = 0; i < data.feed.entry.length; ++i) {
+
+        var json_data = {
+          "City": data.feed.entry[i].gsx$city.$t,
+          "OderID": data.feed.entry[i].gsx$orderid.$t,
+          "Item": data.feed.entry[i].gsx$item.$t,
+          "Latitude": parseFloat(data.feed.entry[i].gsx$latitude.$t),
+          "Longitude": parseFloat(data.feed.entry[i].gsx$longitude.$t),
+          "Dispatch_Status": data.feed.entry[i].gsx$orderdispatched.$t,
+          "Shipped_Status": data.feed.entry[i].gsx$ordershipped.$t,
+          "Priority": data.feed.entry[i].gsx$priority.$t
+
+        };
+        jsonDataObject.push(json_data);
+
+
+        // imageicon.push(imageV);
+        for (var j = 0; j < jsonDataObject.length; j++) {
+          // var marker = L.marker(L.latLng(parseFloat(jsonDataObject[j].Latitude), parseFloat(jsonDataObject[j].Longitude)), {icon: greenIcon});
+          function colorg(data) {
+            var greenIcon = new L.Icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+            var redIcon = new L.Icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+            var yellowIcon = new L.Icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+
+            if (data == "HP") {
+              return redIcon;
+
+            }
+            else if (data == 'LP') {
+              return greenIcon;
+            }
+            else {
+              return yellowIcon;
+            }
+          }
+
+
+          var marker = L.marker(L.latLng(parseFloat(jsonDataObject[j].Latitude), parseFloat(jsonDataObject[j].Longitude)), { icon: colorg(jsonDataObject[j].Priority)});
+          marker.bindPopup(jsonDataObject[j].City, {
+            autoClose: true
+          });
+          map.addLayer(marker);
+          marker.on('click', onClick_Marker)
+          // Attach the corresponding JSON data to your marker:
+          marker.myJsonData = jsonDataObject[j];
+
+          function onClick_Marker(e) {
+            var marker = e.target;
+            popup = L.popup()
+              .setLatLng(marker.getLatLng())
+              .setContent("Order ID: " + marker.myJsonData.OderID + " || Item: " + marker.myJsonData.Item + " || Dispatched: " + marker.myJsonData.Dispatch_Status + " || Shipped: " + marker.myJsonData.Shipped_Status)
+              // .setContent("Dispatch_Status: " + marker.myJsonData.Dispatch_Status + " || Shipped_Status: " + marker.myJsonData.Shipped_Status)
+              .openOn(map);
+          }
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          }).addTo(map);
+
+        }
+      }
+    });
+  }
+
+</script>
+
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Fetch the initial Chart
+    refreshChart();
+    // refreshTable();
+    // Fetch every 5 second
+    setInterval(refreshChart, 5000);
+    // setInterval(refreshTable, 1000);
+  });
+  google.charts.load("current", { packages: ['corechart'] });
+  google.charts.setOnLoadCallback(refreshChart);
+
+  function refreshChart() {
+    var jsonDataObject = [];
+    var graph_arr = [['Order ID', 'Time Taken', { role: 'style' }]];
+    var bar_color = [];
+    $.getJSON('https://spreadsheets.google.com/feeds/list/1Bpk3VPFkcsG2NdKZkl--HhLIVoAIlKKmlceuJiEqRGY/5/public/full?alt=json', function (data) {
+      for (var i = 0; i < data.feed.entry.length; ++i) {
+        var json_data = {
+          "OderID": data.feed.entry[i].gsx$orderid.$t,
+          "TimeTaken": parseFloat(data.feed.entry[i].gsx$timetaken.$t),
+          "Priority": data.feed.entry[i].gsx$priority.$t
+        };
+        jsonDataObject.push(json_data);
+      };
+      // Setting color for the coloumns of graph according to priority of items
+      for (var j in jsonDataObject) {
+        if (jsonDataObject[j].Priority == 'HP') {
+          var color = '#FF0000';
+        }
+        else if (jsonDataObject[j].Priority == 'MP') {
+          var color = '#FFFF00';
+        }
+        else if (jsonDataObject[j].Priority == 'LP') {
+          var color = '#00FF00';
+        }
+        bar_color.push(color)
+      }
+
+      // Converting Json Object to JavaScript Array
+      for (var j in jsonDataObject) {
+        graph_arr.push([jsonDataObject[j].OderID, jsonDataObject[j].TimeTaken, bar_color[j]]);
+      }
+      var graphArray_Final = google.visualization.arrayToDataTable(graph_arr);
+
+      var data = new google.visualization.DataView(graphArray_Final);
+
+      var options = {
+
+        hAxis: { title: 'Order ID' },
+        vAxis: { title: 'Time Taken (s)' },
+        legend: { position: "none" },
+      };
+      var chart = new google.visualization.ColumnChart(document.getElementById('column_chart'));
+      chart.draw(data, options);
+    });
+
+
+  }
+</script>
+<script>
+  /////////////Ajax Requests////////////
+  $(document).ready(function () {
+    // Fetch the initial table
+    refreshTable();
+
+    // Fetch every 1 second
+    setInterval(refreshTable, 1000);
+  });
+
+  function refreshTable() {
+
+    // var trHTML = '';	    
+
+    $.getJSON('https://spreadsheets.google.com/feeds/list/1Bpk3VPFkcsG2NdKZkl--HhLIVoAIlKKmlceuJiEqRGY/5/public/full?alt=json', function (data) {
+
+      var trHTML = '';
+
+      for (var i = 0; i < data.feed.entry.length; ++i) {
+        var myData_map, myData_order;
+          if((i%2)!=0) {
+
+            if((data.feed.entry[i].gsx$priority.$t) == 'HP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+            if((data.feed.entry[i].gsx$priority.$t) == 'MP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#32ff6a">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+            if((data.feed.entry[i].gsx$priority.$t) == 'LP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#f7b71d">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+
+          }
+
+
+
+
+
+
+
+          else{
+
+            if((data.feed.entry[i].gsx$priority.$t) == 'HP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#fa1616">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+            if((data.feed.entry[i].gsx$priority.$t) == 'MP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#fa1616">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#32ff6a">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+            if((data.feed.entry[i].gsx$priority.$t) == 'LP'){
+              trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#fa1616">' + data.feed.entry[i].gsx$orderid.$t +
+                '</td><td>' + data.feed.entry[i].gsx$item.$t +
+                '</td><td style="color:#f7b71d">' + data.feed.entry[i].gsx$priority.$t +
+                '</td><td>' + data.feed.entry[i].gsx$city.$t +
+                // '</td><td background="file:///home/kishorekumar/Desktop/tick..png">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#0e49b5">' + data.feed.entry[i].gsx$orderdispatched.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$ordershipped.$t +
+                '</td><td>' + data.feed.entry[i].gsx$ordertime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$dispatchtime.$t +
+                '</td><td>' + data.feed.entry[i].gsx$shippingtime.$t +
+                '</td><td style="color:#fa1616">' + data.feed.entry[i].gsx$timetaken.$t +
+                '</td></tr>';
+            }
+
+
+          }
+      }
+
+      console.log(trHTML);
+      $('#tableContent').html(trHTML);
+      var trHTML = '';
+
+    });
+  }
+
+</script>
+
+</html>
