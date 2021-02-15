@@ -263,6 +263,7 @@
 
       for (var j = 0; j < jsonDataObject.length; j++) {
         var myData_map, myData_order;
+        if(j%2 ==0){
           if ((jsonDataObject[j].Priority) == 'HP') {
             trHTML += '<tr style="text-align:center; background-color:#f7f7ee; color:#423144; font-weight:bold; font-family:courier; font-size:110%"><td style="color:#0e49b5">' + jsonDataObject[j].OderID +
               '</td><td>' + jsonDataObject[j].Item +
@@ -304,7 +305,7 @@
               '</td><td>' + jsonDataObject[j].Shippingtime +
               '</td><td style="color:#0e49b5">' + jsonDataObject[j].TimeTaken +
               '</td></tr>';
-          }
+          }}
 
         else {
 
